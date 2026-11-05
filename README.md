@@ -3,6 +3,8 @@
 This repo contains the generally reusable parts of the orchestrator ui grouped and exposed as pages, components and elements such as icons.
 It is meant to be used together with an app that includes this library through NPM. For ease of development we have added the orchestrator example app implementation as a submodule in the folder /aps/wfo-ui.
 
+Use Node.js 26.13.0, pinned in `.nvmrc`; run `nvm install` and `nvm use`.
+
 To install and run the app:
 
 ```

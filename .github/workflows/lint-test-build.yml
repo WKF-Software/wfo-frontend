@@ -5,15 +5,15 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v3
-            - name: Use Node.js ${{ matrix.node-version }}
+            - name: Use Node.js
               uses: actions/setup-node@v3
               with:
-                  node-version: ${{ matrix.node-version }}
+                  node-version-file: '.nvmrc'
                   cache: 'npm'
-            - uses: actions/cache@v2
+            - uses: actions/cache@v4
               with:
                   path: '**/node_modules'
-                  key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/package.json') }}
+                  key: ${{ runner.os }}-node-${{ hashFiles('.nvmrc') }}-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/package.json') }}
             - name: Installing dependencies
               run: npm ci
 
@@ -22,15 +22,15 @@ jobs:
         needs: cache-dependencies
         steps:
             - uses: actions/checkout@v3
-            - name: Use Node.js ${{ matrix.node-version }}
+            - name: Use Node.js
               uses: actions/setup-node@v3
               with:
-                  node-version: ${{ matrix.node-version }}
+                  node-version-file: '.nvmrc'
                   cache: 'npm'
-            - uses: actions/cache@v2
+            - uses: actions/cache@v4
               with:
                   path: '**/node_modules'
-                  key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/package.json') }}
+                  key: ${{ runner.os }}-node-${{ hashFiles('.nvmrc') }}-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/package.json') }}
             - name: Installing dependencies
               run: npm ci
             - run: npm run tsc
@@ -42,15 +42,15 @@ jobs:
         needs: cache-dependencies
         steps:
             - uses: actions/checkout@v3
-            - name: Use Node.js ${{ matrix.node-version }}
+            - name: Use Node.js
               uses: actions/setup-node@v3
               with:
-                  node-version: ${{ matrix.node-version }}
+                  node-version-file: '.nvmrc'
                   cache: 'npm'
-            - uses: actions/cache@v2
+            - uses: actions/cache@v4
               with:
                   path: '**/node_modules'
-                  key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/package.json') }}
+                  key: ${{ runner.os }}-node-${{ hashFiles('.nvmrc') }}-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/package.json') }}
             - name: Installing dependencies
               run: npm ci
             - run: npm run test
@@ -60,15 +60,15 @@ jobs:
         needs: cache-dependencies
         steps:
             - uses: actions/checkout@v3
-            - name: Use Node.js ${{ matrix.node-version }}
+            - name: Use Node.js
               uses: actions/setup-node@v3
               with:
-                  node-version: ${{ matrix.node-version }}
+                  node-version-file: '.nvmrc'
                   cache: 'npm'
-            - uses: actions/cache@v2
+            - uses: actions/cache@v4
               with:
                   path: '**/node_modules'
-                  key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/package.json') }}
+                  key: ${{ runner.os }}-node-${{ hashFiles('.nvmrc') }}-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/package.json') }}
             - name: Installing dependencies
               run: npm ci
             - run: npm run build
