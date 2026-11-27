@@ -1,37 +1,35 @@
-import {
-    EuiThemeColorModeStandard,
-    shade,
-    tint,
-    useEuiTheme,
-} from '@elastic/eui';
+import { EuiThemeColorMode, shade, tint, useEuiTheme } from '@elastic/eui';
 
-import { WfoThemeComputed } from '@/theme';
+import { WfoComputedModifications, WfoComputedTheme } from '@/theme';
 import { ColorModes } from '@/types';
 
-export type WfoTheme = {
-    theme: WfoThemeComputed;
-    multiplyByBaseUnit: (multiplier: number) => number;
-    toSecondaryColor: (color: string) => string;
-    colorMode: EuiThemeColorModeStandard;
-    isDarkThemeActive: boolean;
-};
+export type WfoThemeHelpers = Readonly<{
+  theme: WfoComputedTheme;
+  multiplyByBaseUnit: (multiplier: number) => number;
+  toSecondaryColor: (color: string) => string;
+  colorMode: EuiThemeColorMode;
+  isDarkModeActive: boolean;
+}>;
 
-export const useOrchestratorTheme = (): WfoTheme => {
-    const { euiTheme, colorMode } = useEuiTheme<WfoThemeComputed>();
-    const isDarkThemeActive = colorMode === ColorModes.DARK;
+export const shadeOrchestratorColor = (color: string) => shade(color, 0.65).toString();
+export const tintOrchestratorColor = (color: string) => tint(color, 0.8).toString();
 
-    const baseUnit = euiTheme.base;
+export const useOrchestratorTheme = (): WfoThemeHelpers => {
+  const { euiTheme, colorMode } = useEuiTheme<WfoComputedModifications>();
+  const isDarkModeActive = colorMode === ColorModes.DARK;
 
-    const multiplyByBaseUnit = (multiplier: number) => baseUnit * multiplier;
+  const baseUnit = euiTheme.base;
 
-    const toSecondaryColor = (color: string) =>
-        isDarkThemeActive ? shade(color, 0.65) : tint(color, 0.8);
+  const multiplyByBaseUnit = (multiplier: number) => baseUnit * multiplier;
 
-    return {
-        theme: euiTheme,
-        multiplyByBaseUnit,
-        toSecondaryColor,
-        colorMode,
-        isDarkThemeActive,
-    };
+  const toSecondaryColor = (color: string) =>
+    isDarkModeActive ? shadeOrchestratorColor(color) : tintOrchestratorColor(color);
+
+  return {
+    theme: euiTheme,
+    multiplyByBaseUnit,
+    toSecondaryColor,
+    colorMode,
+    isDarkModeActive,
+  };
 };

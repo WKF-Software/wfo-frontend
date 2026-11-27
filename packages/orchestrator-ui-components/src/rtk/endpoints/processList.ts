@@ -1,10 +1,10 @@
 import {
-    BaseGraphQlResult,
-    CACHETAG_TYPE_LIST,
-    CacheTagType,
-    GraphqlQueryVariables,
-    Process,
-    ProcessListResult,
+  BaseGraphQlResult,
+  CACHETAG_TYPE_LIST,
+  CacheTagType,
+  GraphqlQueryVariables,
+  Process,
+  ProcessListResult,
 } from '@/types';
 import { getCacheTag } from '@/utils/cacheTag';
 
@@ -50,6 +50,7 @@ export const processListQuery = `
                         description
                     }
                 }
+                note
             }
             pageInfo {
                 hasNextPage
@@ -65,33 +66,24 @@ export const processListQuery = `
 `;
 
 export type ProcessListResponse = {
-    processes: Process[];
+  processes: Process[];
 } & BaseGraphQlResult;
 
 const processApi = orchestratorApi.injectEndpoints({
-    endpoints: (build) => ({
-        getProcessList: build.query<
-            ProcessListResponse,
-            GraphqlQueryVariables<Process>
-        >({
-            query: (variables) => ({ document: processListQuery, variables }),
-            transformResponse: (
-                response: ProcessListResult,
-            ): ProcessListResponse => {
-                const processes = response.processes.page || [];
+  endpoints: (build) => ({
+    getProcessList: build.query<ProcessListResponse, GraphqlQueryVariables<Process>>({
+      query: (variables) => ({ document: processListQuery, variables }),
+      transformResponse: (response: ProcessListResult): ProcessListResponse => {
+        const processes = response.processes.page || [];
 
-                return {
-                    processes,
-                    pageInfo: response.processes?.pageInfo || {},
-                };
-            },
-            providesTags: getCacheTag(
-                CacheTagType.processes,
-                CACHETAG_TYPE_LIST,
-            ),
-        }),
+        return {
+          processes,
+          pageInfo: response.processes?.pageInfo || {},
+        };
+      },
+      providesTags: getCacheTag(CacheTagType.processes, CACHETAG_TYPE_LIST),
     }),
+  }),
 });
 
-export const { useGetProcessListQuery, useLazyGetProcessListQuery } =
-    processApi;
+export const { useGetProcessListQuery, useLazyGetProcessListQuery } = processApi;

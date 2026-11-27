@@ -1,14 +1,14 @@
 import { css } from '@emotion/react';
 
-import { WfoTheme } from '@/hooks';
+import { WfoThemeHelpers } from '@/hooks';
 
-export const getStyles = ({ theme }: WfoTheme) => {
-    const tabStyle = css({
-        gap: `${theme.size.xxs}`,
-        '.euiTab__prepend': {
-            marginRight: `${theme.size.xs}`,
-        },
-    });
+export const getStyles = ({ theme }: WfoThemeHelpers) => {
+  const tabStyle = css({
+    gap: `${theme.size.xxs}`,
+    '.euiTab__prepend': {
+      marginRight: `${theme.size.xs}`,
+    },
+  });
 
-    return { tabStyle };
+  return { tabStyle };
 };

@@ -1,64 +1,65 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
+
+import { PydanticForm, PydanticFormApiProvider } from 'pydantic-forms';
 
 import { EuiFlexItem } from '@elastic/eui';
 
-import { UserInputFormWizard, WfoError, WfoLoading } from '@/components';
-import { useOrchestratorTheme } from '@/hooks';
+import { StepFormFooter } from '@/components/WfoWorkflowSteps/WfoStep/WfoStepFormFooter';
+import { useGetPydanticFormsConfig, useOrchestratorTheme } from '@/hooks';
 import { HttpStatus } from '@/rtk';
 import { useResumeProcessMutation } from '@/rtk/endpoints/forms';
-import { InputForm } from '@/types/forms';
+import { FormUserPermissions, InputForm } from '@/types';
 
 interface WfoStepFormProps {
-    userInputForm: InputForm;
-    isTask: boolean;
-    processId?: string;
+  userInputForm: InputForm;
+  isTask: boolean;
+  processId: string;
+  userPermissions: FormUserPermissions;
 }
 
-export const WfoStepForm = ({
-    userInputForm,
-    isTask,
-    processId,
-}: WfoStepFormProps) => {
-    const [isProcessing, setIsProcessing] = useState<boolean>(false);
-    const [hasError, setHasError] = useState<boolean>(false);
-    const { theme } = useOrchestratorTheme();
-    const [resumeProcess] = useResumeProcessMutation();
+export const WfoStepForm = ({ userInputForm, isTask, processId, userPermissions }: WfoStepFormProps) => {
+  const { theme } = useOrchestratorTheme();
 
-    const submitForm = (processInput: object[]) => {
-        if (!processId) {
-            return Promise.reject();
+  const [resumeProcess] = useResumeProcessMutation();
+
+  const getInitialStepInput = useMemo(() => userInputForm, [userInputForm]);
+
+  const getStepFormProvider = useCallback(
+    (): PydanticFormApiProvider =>
+      async ({ requestBody = [] }) => {
+        if (requestBody.length === 0) {
+          return {
+            form: getInitialStepInput,
+            meta: { hasNext: false },
+          };
         }
 
-        return resumeProcess({ processId, userInputs: processInput })
-            .unwrap()
-            .then(() => {
-                setIsProcessing(true);
-            })
-            .catch((error) => {
-                if (error?.status !== HttpStatus.FormNotComplete) {
-                    if (error?.status === HttpStatus.BadRequest) {
-                        // Rethrow the error so userInputForm can catch it and display validation errors
-                        throw error;
-                    }
-                    console.error(error);
-                    setHasError(true);
-                } else {
-                    throw error;
-                }
-            });
-    };
+        return resumeProcess({ processId, userInputs: requestBody })
+          .unwrap()
+          .catch((error) => {
+            if (error.status === HttpStatus.BadGateway) {
+              return {};
+            } else if (error.status === HttpStatus.FormNotComplete) {
+              return error.data;
+            } else if (error.status === HttpStatus.BadRequest) {
+              return {
+                ...error.data,
+                status: error.status,
+              };
+            }
+            throw error;
+          });
+      },
+    [getInitialStepInput, processId, resumeProcess],
+  );
 
-    return (
-        <EuiFlexItem css={{ margin: theme.size.m }}>
-            {(hasError && <WfoError />) || (isProcessing && <WfoLoading />) || (
-                <UserInputFormWizard
-                    stepUserInput={userInputForm}
-                    stepSubmit={submitForm}
-                    hasNext={false}
-                    isTask={isTask}
-                    isResuming={true}
-                />
-            )}
-        </EuiFlexItem>
-    );
+  const Footer = () => <StepFormFooter isTask={isTask} isResumeAllowed={userPermissions.resumeAllowed} />;
+
+  const config = useGetPydanticFormsConfig(getStepFormProvider, Footer);
+
+  return (
+    <EuiFlexItem css={{ margin: theme.size.m }}>
+      <PydanticForm formKey={processId} formId="wfo-step-form" config={config} />
+    </EuiFlexItem>
+  );
 };

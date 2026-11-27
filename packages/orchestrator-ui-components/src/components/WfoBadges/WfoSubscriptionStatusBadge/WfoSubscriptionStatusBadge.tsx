@@ -5,49 +5,41 @@ import { SubscriptionStatus } from '../../../types';
 import { WfoBadge } from '../WfoBadge';
 
 export type WfoSubscriptionStatusBadgeProps = {
-    status: SubscriptionStatus;
+  status?: SubscriptionStatus;
 };
 
-export const WfoSubscriptionStatusBadge: FC<
-    WfoSubscriptionStatusBadgeProps
-> = ({ status }) => {
-    const { theme, toSecondaryColor } = useOrchestratorTheme();
+export const WfoSubscriptionStatusBadge: FC<WfoSubscriptionStatusBadgeProps> = ({ status }) => {
+  const { theme, toSecondaryColor } = useOrchestratorTheme();
+  const lowerCaseStatus = status?.toLowerCase() || '';
 
-    const getBadgeColorFromStatus = (status: string) => {
-        const {
-            primary,
-            darkestShade,
-            lightShade,
-            primaryText,
-            success,
-            successText,
-        } = theme.colors;
+  const getBadgeColorFromStatus = () => {
+    const { primary, borderBaseSubdued, textParagraph, textPrimary, success, textSuccess } = theme.colors;
 
-        switch (status.toLowerCase()) {
-            case SubscriptionStatus.ACTIVE:
-                return {
-                    badgeColor: toSecondaryColor(success),
-                    textColor: successText,
-                };
-            case SubscriptionStatus.TERMINATED:
-                return {
-                    badgeColor: lightShade,
-                    textColor: darkestShade,
-                };
+    switch (lowerCaseStatus) {
+      case SubscriptionStatus.ACTIVE:
+        return {
+          badgeColor: toSecondaryColor(success),
+          textColor: textSuccess,
+        };
+      case SubscriptionStatus.TERMINATED:
+        return {
+          badgeColor: borderBaseSubdued,
+          textColor: textParagraph,
+        };
 
-            default:
-                return {
-                    badgeColor: toSecondaryColor(primary),
-                    textColor: primaryText,
-                };
-        }
-    };
+      default:
+        return {
+          badgeColor: toSecondaryColor(primary),
+          textColor: textPrimary,
+        };
+    }
+  };
 
-    const { badgeColor, textColor } = getBadgeColorFromStatus(status);
+  const { badgeColor, textColor } = getBadgeColorFromStatus();
 
-    return (
-        <WfoBadge textColor={textColor} color={badgeColor}>
-            {status.toLowerCase()}
-        </WfoBadge>
-    );
+  return (
+    <WfoBadge textColor={textColor} color={badgeColor}>
+      {lowerCaseStatus}
+    </WfoBadge>
+  );
 };

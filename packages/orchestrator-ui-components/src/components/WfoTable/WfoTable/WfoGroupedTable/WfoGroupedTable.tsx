@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { FC, ReactElement } from 'react';
 
 import { useTranslations } from 'next-intl';
 
@@ -11,90 +11,84 @@ import { getWfoTableStyles } from '../styles';
 import { useGroupedTableConfig } from './useGroupedTableConfig';
 
 export type GroupType = {
-    groupName: string;
+  groupName: string;
 };
 
 export type GroupedData<T> = {
-    [Key: string]: T[] | GroupedData<T>;
+  [Key: string]: T[] | GroupedData<T>;
 };
 
 export type WfoGroupedTableProps<T extends object> = Pick<
-    WfoTableProps<T>,
-    'columnConfig' | 'isLoading' | 'className'
+  WfoTableProps<T>,
+  'columnConfig' | 'isLoading' | 'className'
 > & {
-    data: GroupedData<T>;
-    groupNameLabel: string;
+  data: GroupedData<T>;
+  groupNameLabel: string;
+  overrideHeaderSection?: (ExpandButton: ReactElement) => React.ReactNode;
 };
 
 export const WfoGroupedTable = <T extends object>({
-    data,
-    columnConfig,
-    groupNameLabel,
-    isLoading,
-    className,
+  data,
+  columnConfig,
+  groupNameLabel,
+  isLoading,
+  overrideHeaderSection,
+  className,
 }: WfoGroupedTableProps<T>) => {
-    const { headerStyle, rowStyle, cellStyle } =
-        useWithOrchestratorTheme(getWfoTableStyles);
+  const { headerStyle, rowStyle, cellStyle } = useWithOrchestratorTheme(getWfoTableStyles);
 
-    const t = useTranslations('wfoComponents.wfoGroupedTable');
+  const t = useTranslations('wfoComponents.wfoGroupedTable');
 
-    const {
-        groups,
-        groupColumnConfig,
-        numberOfColumnsInnerTable,
-        uniqueRowIdToExpandedRowMap,
-        isAllGroupsAndSubgroupsExpanded,
-        toggleExpandedRow,
-        expandAllRows,
-        collapseAllRows,
-    } = useGroupedTableConfig({
-        data,
-        groupNameLabel,
-        columnConfig,
-    });
+  const {
+    groups,
+    groupColumnConfig,
+    numberOfColumnsInnerTable,
+    uniqueRowIdToExpandedRowMap,
+    isAllGroupsAndSubgroupsExpanded,
+    toggleExpandedRow,
+    expandAllRows,
+    collapseAllRows,
+  } = useGroupedTableConfig({
+    data,
+    groupNameLabel,
+    columnConfig,
+  });
 
-    return (
-        <>
-            <EuiFlexGroup justifyContent="flexEnd">
-                <EuiButtonEmpty
-                    size="xs"
-                    onClick={() =>
-                        isAllGroupsAndSubgroupsExpanded
-                            ? collapseAllRows()
-                            : expandAllRows()
-                    }
-                >
-                    {isAllGroupsAndSubgroupsExpanded
-                        ? t('collapse')
-                        : t('expand')}
-                </EuiButtonEmpty>
-            </EuiFlexGroup>
+  const ExpandCollapseButton: FC = () => (
+    <EuiButtonEmpty size="xs" onClick={() => (isAllGroupsAndSubgroupsExpanded ? collapseAllRows() : expandAllRows())}>
+      {isAllGroupsAndSubgroupsExpanded ? t('collapse') : t('expand')}
+    </EuiButtonEmpty>
+  );
 
-            <EuiSpacer size="xs" />
+  return (
+    <>
+      <EuiFlexGroup justifyContent="flexEnd">
+        {overrideHeaderSection ? overrideHeaderSection(<ExpandCollapseButton />) : <ExpandCollapseButton />}
+      </EuiFlexGroup>
 
-            <WfoTable
-                className={className}
-                data={groups}
-                columnConfig={groupColumnConfig}
-                isLoading={isLoading}
-                overrideHeader={() => (
-                    <thead css={headerStyle}>
-                        <tr css={rowStyle}>
-                            <th
-                                colSpan={numberOfColumnsInnerTable}
-                                css={cellStyle}
-                            >
-                                {groupNameLabel}
-                            </th>
-                        </tr>
-                    </thead>
-                )}
-                rowExpandingConfiguration={{
-                    uniqueRowId: 'groupName',
-                    uniqueRowIdToExpandedRowMap,
-                }}
-                onRowClick={({ groupName }) => toggleExpandedRow(groupName)}
-            />
-        </>
-    );
+      <EuiSpacer size="xs" />
+
+      <WfoTable
+        className={className}
+        data={groups}
+        columnConfig={groupColumnConfig}
+        isLoading={isLoading}
+        overrideHeader={() => (
+          <thead css={headerStyle}>
+            <tr css={rowStyle}>
+              <th colSpan={numberOfColumnsInnerTable} css={cellStyle}>
+                {groupNameLabel}
+              </th>
+            </tr>
+          </thead>
+        )}
+        rowExpandingConfiguration={{
+          uniqueRowId: 'groupName',
+          uniqueRowIdToExpandedRowMap,
+        }}
+        onRowClick={({ groupName }) => toggleExpandedRow(groupName)}
+        appendFillerColumn={false}
+      />
+    </>
+  );
 };
