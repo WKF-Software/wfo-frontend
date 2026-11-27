@@ -1,0 +1,26 @@
+name: Lint, test and build
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      HUSKY: '0'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24.x'
+          cache: npm
+      - run: npm ci
+      - run: npm run test -- --filter=wfo-ui... -- --runInBand
+      # Next.js runs ESLint and checks types as part of the build.
+      - run: npm run build -- --filter=wfo-ui...

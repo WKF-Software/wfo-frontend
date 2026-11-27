@@ -42,7 +42,7 @@ const FALLBACK_SUBMODULE_URL = 'https://github.com/workfloworchestrator/example-
  * Paths owned by this fork. They are taken from the current branch and re-applied
  * after the upstream tree is laid down, so they survive every sync.
  */
-const FORK_OWNED_PATHS = ['scripts', 'DEPLOY.md', 'UPGRADING.md', '.github/workflows/block-deploy-to-main.yml'];
+const FORK_OWNED_PATHS = ['scripts', 'DEPLOY.md', 'UPGRADING.md', '.github/workflows/lint-test-build.yml'];
 
 /**
  * Merged into the upstream package.json after each sync.

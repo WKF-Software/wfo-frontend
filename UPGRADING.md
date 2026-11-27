@@ -137,7 +137,7 @@ Everything outside the overlay is replaced on every sync. To make a change perma
 its path in `FORK_OWNED_PATHS` in [`scripts/sync-upstream.mjs`](scripts/sync-upstream.mjs):
 
 ```js
-const FORK_OWNED_PATHS = ['scripts', 'DEPLOY.md', 'UPGRADING.md', '.github/workflows/block-deploy-to-main.yml'];
+const FORK_OWNED_PATHS = ['scripts', 'DEPLOY.md', 'UPGRADING.md', '.github/workflows/lint-test-build.yml'];
 ```
 
 For `package.json` specifically, add to `PACKAGE_JSON_OVERLAY` in the same file rather than

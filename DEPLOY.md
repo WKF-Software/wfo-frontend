@@ -67,7 +67,7 @@ listed in `FORK_OWNED_PATHS` in `scripts/sync-upstream.mjs`:
 - `scripts/` — the deploy and sync tooling
 - `DEPLOY.md` — this file
 - `UPGRADING.md` — the step-by-step upgrade runbook
-- `.github/workflows/block-deploy-to-main.yml`
+- `.github/workflows/lint-test-build.yml`
 
 Plus the `package.json` overlay (`PACKAGE_JSON_OVERLAY` in the same file), which re-adds the
 `deploy`, `deploy:quick` and `sync:upstream` scripts and the `@inquirer/prompts` dev dependency.
