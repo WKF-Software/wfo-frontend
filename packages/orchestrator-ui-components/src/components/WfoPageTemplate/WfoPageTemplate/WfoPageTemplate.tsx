@@ -1,71 +1,87 @@
-import React, { FC, ReactElement, ReactNode, useState } from 'react';
+import React, { FC, ReactElement, ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 
-import { EuiPageTemplate } from '@elastic/eui';
 import type { EuiThemeColorMode } from '@elastic/eui';
-import { EuiSideNavItemType } from '@elastic/eui/src/components/side_nav/side_nav_types';
+import { EuiPageTemplate, EuiSideNavItemType, EuiThemeProvider } from '@elastic/eui';
 
-import { useOrchestratorTheme } from '../../../hooks/useOrchestratorTheme';
-import { WfoBreadcrumbs } from '../WfoBreadcrumbs';
-import { WfoPageHeader } from '../WfoPageHeader';
-import { WfoSidebar } from '../WfoSidebar';
+import { WfoBreadcrumbs, WfoPageHeader, WfoSidebar } from '@/components';
+import { useWithOrchestratorTheme } from '@/hooks';
+import { wfoThemeModifications } from '@/theme';
+import { ColorModes } from '@/types';
+
+import { ContentContextProvider } from './ContentContext';
+import { getPageTemplateStyles } from './styles';
 
 export interface WfoPageTemplateProps {
-    getAppLogo: (navigationHeight: number) => ReactElement;
-    overrideMenuItems?: (
-        defaultMenuItems: EuiSideNavItemType<object>[],
-    ) => EuiSideNavItemType<object>[];
-    onThemeSwitch: (theme: EuiThemeColorMode) => void;
-    children: ReactNode;
+  getAppLogo: (navigationHeight: number) => ReactElement;
+  overrideMenuItems?: (defaultMenuItems: EuiSideNavItemType<object>[]) => EuiSideNavItemType<object>[];
+  children: ReactNode;
+  colorMode: EuiThemeColorMode;
+  setColorMode: React.Dispatch<React.SetStateAction<EuiThemeColorMode>>;
 }
 
-export const WfoPageTemplate: FC<WfoPageTemplateProps> = ({
-    children,
-    getAppLogo,
-    overrideMenuItems,
-    onThemeSwitch,
-}) => {
-    const { theme, multiplyByBaseUnit } = useOrchestratorTheme();
-    const [isSideMenuVisible, setIsSideMenuVisible] = useState(true);
-    const navigationHeight = multiplyByBaseUnit(3);
+export const WfoPageTemplate: FC<WfoPageTemplateProps> = (props) => {
+  const { colorMode, setColorMode } = props;
+  const handleColorModeSwitch = useCallback(
+    (newColorMode: EuiThemeColorMode) => {
+      setColorMode(newColorMode);
+      localStorage.setItem('colorMode', newColorMode);
+    },
+    [setColorMode],
+  );
 
-    return (
-        <>
-            <WfoPageHeader
-                getAppLogo={getAppLogo}
-                navigationHeight={navigationHeight}
-                onThemeSwitch={onThemeSwitch}
-            />
+  useEffect(() => {
+    // Initialize theme mode from localStorage or set it to 'light' if not present
+    const storedColorMode = localStorage.getItem('colorMode');
+    if (storedColorMode !== ColorModes.LIGHT && storedColorMode !== ColorModes.DARK) {
+      handleColorModeSwitch(ColorModes.LIGHT);
+    } else {
+      handleColorModeSwitch(storedColorMode);
+    }
+  }, [handleColorModeSwitch]);
 
-            {/* Sidebar and content area */}
-            <EuiPageTemplate
-                panelled={false}
-                grow={false}
-                contentBorder={false}
-                minHeight={`calc(100vh - ${navigationHeight}px)`}
-                restrictWidth={false}
-            >
-                {isSideMenuVisible && (
-                    <EuiPageTemplate.Sidebar
-                        css={{
-                            backgroundColor: theme.colors.body,
-                        }}
-                    >
-                        <WfoSidebar overrideMenuItems={overrideMenuItems} />
-                    </EuiPageTemplate.Sidebar>
-                )}
-                <EuiPageTemplate.Section
-                    css={{
-                        backgroundColor: theme.colors.emptyShade,
-                    }}
-                >
-                    <WfoBreadcrumbs
-                        handleSideMenuClick={() =>
-                            setIsSideMenuVisible((prevState) => !prevState)
-                        }
-                    />
-                    {children}
-                </EuiPageTemplate.Section>
-            </EuiPageTemplate>
-        </>
-    );
+  return (
+    <EuiThemeProvider modify={wfoThemeModifications} colorMode={colorMode}>
+      <WfoPageTemplateContent {...props} handleColorModeSwitch={handleColorModeSwitch} />
+    </EuiThemeProvider>
+  );
+};
+
+const WfoPageTemplateContent: FC<
+  WfoPageTemplateProps & {
+    handleColorModeSwitch: (mode: EuiThemeColorMode) => void;
+  }
+> = ({ children, getAppLogo, overrideMenuItems, handleColorModeSwitch }) => {
+  const { getSidebarStyle, NAVIGATION_HEIGHT } = useWithOrchestratorTheme(getPageTemplateStyles);
+
+  const [isSideMenuVisible, setIsSideMenuVisible] = useState(true);
+  const headerRowRef = useRef<HTMLDivElement>(null);
+
+  return (
+    <>
+      <WfoPageHeader
+        getAppLogo={getAppLogo}
+        navigationHeight={NAVIGATION_HEIGHT}
+        onColorModeSwitch={handleColorModeSwitch}
+      />
+      {/* Sidebar and content area */}
+      <EuiPageTemplate panelled={false} grow={false} contentBorder={false} restrictWidth={false}>
+        {isSideMenuVisible && (
+          <EuiPageTemplate.Sidebar css={getSidebarStyle(NAVIGATION_HEIGHT)}>
+            <WfoSidebar overrideMenuItems={overrideMenuItems} />
+          </EuiPageTemplate.Sidebar>
+        )}
+
+        <ContentContextProvider contentRef={headerRowRef} navigationHeight={NAVIGATION_HEIGHT}>
+          <EuiPageTemplate.Section
+            css={{
+              minHeight: `calc(100vh - ${NAVIGATION_HEIGHT}px)`,
+            }}
+          >
+            <WfoBreadcrumbs handleSideMenuClick={() => setIsSideMenuVisible((prevState) => !prevState)} />
+            {children}
+          </EuiPageTemplate.Section>
+        </ContentContextProvider>
+      </EuiPageTemplate>
+    </>
+  );
 };

@@ -9,33 +9,29 @@ import { EngineStatus } from '@/types';
 import { WfoHeaderBadge } from '../WfoHeaderBadge';
 
 export const WfoEngineStatusBadge = () => {
-    const { theme } = useOrchestratorTheme();
-    const { data } = useGetEngineStatusQuery();
-    const { engineStatus } = data || {};
-    const { useWebSockets } = useGetOrchestratorConfig();
-    const [websocketTrigger, { isUninitialized }] =
-        useLazyStreamMessagesQuery();
+  const { theme } = useOrchestratorTheme();
+  const { data } = useGetEngineStatusQuery();
+  const { engineStatus } = data || {};
+  const { useWebSockets } = useGetOrchestratorConfig();
 
-    if (useWebSockets && isUninitialized) {
-        websocketTrigger();
-    }
+  const { orchestratorWebsocketUrl } = useGetOrchestratorConfig();
+  const [websocketTrigger, { isUninitialized }] = useLazyStreamMessagesQuery();
 
-    const engineStatusText: string = engineStatus
-        ? `Engine is ${engineStatus}`
-        : 'Engine status is unavailable';
+  if (useWebSockets && isUninitialized) {
+    websocketTrigger(orchestratorWebsocketUrl);
+  }
 
-    const engineColor =
-        engineStatus === EngineStatus.RUNNING
-            ? theme.colors.success
-            : theme.colors.warning;
+  const engineStatusText: string = engineStatus ? `Engine is ${engineStatus}` : 'Engine status is unavailable';
 
-    return (
-        <WfoHeaderBadge
-            color={theme.colors.ghost}
-            textColor={theme.colors.shadow}
-            iconType={() => <WfoStatusDotIcon color={engineColor} />}
-        >
-            {engineStatusText}
-        </WfoHeaderBadge>
-    );
+  const engineColor = engineStatus === EngineStatus.RUNNING ? theme.colors.success : theme.colors.warning;
+
+  return (
+    <WfoHeaderBadge
+      color={theme.colors.backgroundBaseNeutral}
+      textColor={theme.colors.textParagraph}
+      iconType={() => <WfoStatusDotIcon color={engineColor} />}
+    >
+      {engineStatusText}
+    </WfoHeaderBadge>
+  );
 };

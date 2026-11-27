@@ -1,75 +1,90 @@
 import { css } from '@emotion/react';
 
-import { WfoTheme } from '@/hooks';
+import { WfoThemeHelpers } from '@/hooks';
 
 const EXPANDED_CONTENT_LEFT_MARGIN = '52px';
 
-export const getSubscriptionActionStyles = ({ theme }: WfoTheme) => {
-    const clickableStyle = css({
-        '&:hover, & :hover': {
-            cursor: 'pointer',
-        },
-    });
+export const getSubscriptionActionStyles = ({ theme }: WfoThemeHelpers) => {
+  const clickableStyle = css({
+    '&:hover, & :hover': {
+      cursor: 'pointer',
+    },
+  });
 
-    const expandableMenuItemStyle = css({
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    });
+  const expandableMenuItemStyle = css({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  });
 
-    const expandButtonStyle = css({
-        marginRight: theme.size.m,
-    });
+  const expandButtonStyle = css({
+    marginRight: theme.size.m,
+  });
 
-    const expandedContentStyle = css({
-        marginLeft: EXPANDED_CONTENT_LEFT_MARGIN,
-        paddingBottom: theme.size.m,
-        paddingRight: theme.size.m,
-    });
+  const expandedContentStyle = css({
+    marginLeft: EXPANDED_CONTENT_LEFT_MARGIN,
+    paddingBottom: theme.size.m,
+    paddingRight: theme.size.m,
+  });
 
-    const linkStyle = css({
+  const linkStyle = css({
+    display: 'block',
+  });
+
+  const linkMenuItemStyle = css({
+    '&>:hover': {
+      backgroundColor: theme.colors.backgroundBasePlain,
+      borderRadius: theme.border.radius.medium,
+      cursor: 'pointer',
+    },
+    '.euiToolTipAnchor': {
+      width: '100%',
+    },
+  });
+
+  const tooltipMenuItemStyle = css([
+    linkMenuItemStyle,
+    {
+      '& > *': {
         display: 'block',
-    });
+      },
+    },
+  ]);
 
-    const linkMenuItemStyle = css({
-        '&>:hover': {
-            backgroundColor: theme.colors.lightestShade,
-            borderRadius: theme.border.radius.medium,
-        },
-    });
+  const disabledIconStyle = css({
+    display: 'flex',
+    width: theme.base * 2,
+  });
 
-    const tooltipMenuItemStyle = css([
-        linkMenuItemStyle,
-        {
-            '& > *': {
-                display: 'block',
-            },
-        },
-    ]);
+  const iconStyle = css({
+    width: theme.base * 2,
+  });
 
-    const disabledIconStyle = css({
-        display: 'flex',
-        width: theme.base * 2,
-    });
+  const secondaryIconStyle = css({
+    position: 'absolute',
+    transform: 'translate(13px, -8px);',
+  });
 
-    const iconStyle = css({
-        width: theme.base * 2,
-    });
+  const spinnerSecondaryIconStyle = css({
+    transform: 'translate(-8px, -6px);',
+  });
 
-    const secondaryIconStyle = css({
-        transform: 'translate(-11px, -8px);',
-    });
+  const disabledTextStyle = css({
+    color: theme.colors.textDisabled,
+  });
 
-    return {
-        clickableStyle,
-        expandableMenuItemStyle,
-        expandButtonStyle,
-        expandedContentStyle,
-        linkStyle,
-        linkMenuItemStyle,
-        tooltipMenuItemStyle,
-        disabledIconStyle,
-        iconStyle,
-        secondaryIconStyle,
-    };
+  return {
+    clickableStyle,
+    expandableMenuItemStyle,
+    expandButtonStyle,
+    expandedContentStyle,
+    linkStyle,
+    linkMenuItemStyle,
+    tooltipMenuItemStyle,
+    disabledIconStyle,
+    iconStyle,
+    secondaryIconStyle,
+    disabledTextStyle,
+    spinnerSecondaryIconStyle,
+  };
 };

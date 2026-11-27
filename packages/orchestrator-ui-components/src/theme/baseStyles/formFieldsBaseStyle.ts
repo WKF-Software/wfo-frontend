@@ -1,17 +1,18 @@
 import { css } from '@emotion/react';
 
-import { WfoTheme } from '@/hooks';
+import { WfoThemeHelpers } from '@/hooks';
 
-export const getFormFieldsBaseStyle = ({ theme }: WfoTheme) => {
-    const formFieldBaseStyle = css({
-        backgroundColor: theme.colors.body,
-        color: theme.colors.text,
-        '&:focus': {
-            backgroundColor: theme.colors.emptyShade,
-        },
-    });
+export const getFormFieldsBaseStyle = ({ theme }: WfoThemeHelpers) => {
+  const formFieldBaseStyle = css({
+    backgroundColor: theme.colors.backgroundBaseSubdued,
+    color: theme.colors.textParagraph,
+    '&:focus, &:focus-visible, &:focus-within': {
+      backgroundColor: theme.colors.backgroundBaseNeutral,
+      boxShadow: `0 0 0 1px ${theme.colors.primary}`,
+    },
+  });
 
-    return {
-        formFieldBaseStyle,
-    };
+  return {
+    formFieldBaseStyle,
+  };
 };

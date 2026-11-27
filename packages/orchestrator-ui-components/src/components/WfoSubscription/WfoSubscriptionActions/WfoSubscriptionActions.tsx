@@ -1,283 +1,242 @@
 import React, { FC, useState } from 'react';
 
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
 
-import {
-    EuiButton,
-    EuiContextMenuItem,
-    EuiContextMenuPanel,
-    EuiPanel,
-    EuiPopover,
-    EuiTitle,
-    EuiToolTip,
-} from '@elastic/eui';
-import { ReactJSXElement } from '@emotion/react/types/jsx-namespace';
+import { EuiButton, EuiButtonIcon, EuiLoadingSpinner, EuiTitle } from '@elastic/eui';
 
-import { PATH_START_NEW_TASK, PATH_START_NEW_WORKFLOW } from '@/components';
+import {
+  PATH_START_NEW_TASK,
+  PATH_START_NEW_WORKFLOW,
+  PATH_SUBSCRIPTIONS,
+  WfoInSyncField,
+  WfoPopover,
+} from '@/components';
+import { getActionItemsByTarget } from '@/components/WfoSubscription';
+import { WfoSubscriptionActionsMenuItem } from '@/components/WfoSubscription/WfoSubscriptionActions/WfoSubscriptionActionsMenuItem';
+import { useActiveProcess } from '@/components/WfoSubscription/WfoSubscriptionActions/utils';
 import { PolicyResource } from '@/configuration/policy-resources';
-import {
-    useCheckEngineStatus,
-    useOrchestratorTheme,
-    usePolicy,
-    useWithOrchestratorTheme,
-} from '@/hooks';
-import { WfoXCircleFill } from '@/icons';
-import { useGetSubscriptionActionsQuery } from '@/rtk/endpoints/subscriptionActions';
-import { SubscriptionAction, WorkflowTarget } from '@/types';
-
-import { WfoTargetTypeIcon } from '../WfoTargetTypeIcon';
-import { flattenArrayProps } from '../utils';
-import { WfoSubscriptionActionExpandableMenuItem } from './WfoSubscriptionActionExpandableMenuItem';
-import { getSubscriptionActionStyles } from './styles';
-
-type MenuItemProps = {
-    key: string;
-    action: SubscriptionAction;
-    index: number;
-    target: WorkflowTarget;
-    isTask?: boolean;
-};
+import { useOrchestratorTheme, usePolicy } from '@/hooks';
+import { WfoDotsHorizontal } from '@/icons/WfoDotsHorizontal';
+import { useGetSubscriptionActionsQuery, useGetSubscriptionDetailQuery, useStartProcessMutation } from '@/rtk';
+import { WorkflowTarget } from '@/types';
 
 type MenuBlockProps = {
-    title: string;
+  title: string;
 };
 const MenuBlock: FC<MenuBlockProps> = ({ title }) => (
-    <EuiTitle size="xxxs">
-        <h3>{title}</h3>
-    </EuiTitle>
+  <EuiTitle size="xxxs">
+    <h3>{title}</h3>
+  </EuiTitle>
 );
 
 export type WfoSubscriptionActionsProps = {
-    subscriptionId: string;
-    isLoading?: boolean;
+  subscriptionId: string;
+  isLoading?: boolean;
+  compactMode?: boolean;
+  subscriptionPath?: string;
 };
 
 export const WfoSubscriptionActions: FC<WfoSubscriptionActionsProps> = ({
-    subscriptionId,
-    isLoading,
+  subscriptionId,
+  isLoading,
+  compactMode = false,
+  subscriptionPath = PATH_SUBSCRIPTIONS,
 }) => {
-    const { theme } = useOrchestratorTheme();
-    const {
-        linkMenuItemStyle,
-        tooltipMenuItemStyle,
-        disabledIconStyle,
-        iconStyle,
-        secondaryIconStyle,
-    } = useWithOrchestratorTheme(getSubscriptionActionStyles);
+  const t = useTranslations('subscriptions.detail.actions');
+  const { theme } = useOrchestratorTheme();
+  const [isPopoverOpen, setPopover] = useState<boolean>(false);
+  const router = useRouter();
+  const disableQuery = isLoading || (!isPopoverOpen && compactMode);
+  const { isAllowed } = usePolicy();
+  const { data: subscriptionActions, isLoading: subscriptionActionsIsLoading } = useGetSubscriptionActionsQuery(
+    { subscriptionId },
+    { skip: disableQuery },
+  );
+  const [startProcess] = useStartProcessMutation();
 
-    const router = useRouter();
-    const t = useTranslations('subscriptions.detail.actions');
-    const [isPopoverOpen, setPopover] = useState(false);
-    const { data: subscriptionActions } = useGetSubscriptionActionsQuery(
+  const { data: subscriptionDetail, isLoading: subscriptionDetailIsLoading } = useGetSubscriptionDetailQuery(
+    {
+      subscriptionId,
+    },
+    { skip: !isPopoverOpen && compactMode, refetchOnMountOrArgChange: true },
+  );
+
+  const processes = subscriptionDetail?.subscription?.processes?.page;
+  const { hasActiveProcess, isCompleted, setProcessId } = useActiveProcess(processes);
+
+  const buttonIsLoading = isCompleted ? !isCompleted : hasActiveProcess;
+
+  const onButtonClick = () => setPopover(!isPopoverOpen);
+  const closePopover = () => setPopover(false);
+
+  const button =
+    compactMode ?
+      <EuiButtonIcon
+        iconType={() =>
+          buttonIsLoading ? <EuiLoadingSpinner /> : <WfoDotsHorizontal color={theme.colors.textDisabled} />
+        }
+        onClick={onButtonClick}
+        aria-label="Row context menu"
+        isLoading={isLoading}
+      />
+    : <EuiButton iconType="arrowDown" iconSide="right" onClick={onButtonClick} isLoading={isLoading}>
+        {t('actions')}
+      </EuiButton>;
+
+  const { SUBSCRIPTION_VALIDATE, SUBSCRIPTION_RECONCILE, SUBSCRIPTION_MODIFY, SUBSCRIPTION_TERMINATE, SET_IN_SYNC } =
+    PolicyResource;
+
+  const redirectToUrl = (actionName: string, isTask: boolean = false) => {
+    const path = isTask ? PATH_START_NEW_TASK : PATH_START_NEW_WORKFLOW;
+
+    const url = {
+      pathname: `${path}/${actionName}`,
+      query: {
+        subscriptionId,
+      },
+    };
+    router.push(url);
+  };
+
+  const silentlyStartAction = (actionName: string) => {
+    startProcess({
+      workflowName: actionName,
+      userInputs: [
         {
-            subscriptionId,
+          subscription_id: subscriptionId,
         },
-        { skip: isLoading },
-    );
-    const { isEngineRunningNow } = useCheckEngineStatus();
-    const { isAllowed } = usePolicy();
+      ],
+    })
+      .unwrap()
+      .then((response) => {
+        if (response?.id) {
+          setProcessId(response.id);
+        }
+      })
+      .catch((error) => {
+        console.error(`Failed to start action:`, error);
+      })
+      .finally(() => {
+        closePopover();
+      });
+  };
 
-    const onButtonClick = () => {
-        setPopover(!isPopoverOpen);
-    };
+  const handleActionClick = (actionName: string, compactMode: boolean, isTask: boolean = false) => {
+    if (compactMode) {
+      silentlyStartAction(actionName);
+    } else {
+      redirectToUrl(actionName, isTask);
+    }
+  };
 
-    const closePopover = () => {
-        setPopover(false);
-    };
+  const validateActionItems = getActionItemsByTarget(WorkflowTarget.VALIDATE, subscriptionActions);
+  const reconcileActionItems = getActionItemsByTarget(WorkflowTarget.RECONCILE, subscriptionActions);
+  const modifyActionItems = getActionItemsByTarget(WorkflowTarget.MODIFY, subscriptionActions);
+  const terminateActionItems = getActionItemsByTarget(WorkflowTarget.TERMINATE, subscriptionActions);
 
-    const MenuItem: FC<MenuItemProps> = ({
-        action,
-        target,
-        isTask = false,
-    }) => {
-        // Change icon to include x if there's a reason
-        // Add tooltip with reason
-        const linkIt = (actionItem: ReactJSXElement) => {
-            const path = isTask ? PATH_START_NEW_TASK : PATH_START_NEW_WORKFLOW;
-            const url = {
-                pathname: `${path}/${action.name}`,
-                query: { subscriptionId: subscriptionId },
-            };
+  const compactItems = (
+    <>
+      {isAllowed(SUBSCRIPTION_VALIDATE + subscriptionId) && validateActionItems.length > 0 && (
+        <>
+          {!compactMode && <MenuBlock title={t('tasks')} />}
+          {validateActionItems.map((subscriptionAction, index) => (
+            <WfoSubscriptionActionsMenuItem
+              key={`s_${index}`}
+              subscriptionAction={subscriptionAction}
+              target={WorkflowTarget.VALIDATE}
+              setPopover={setPopover}
+              subscriptionPath={subscriptionPath}
+              onClick={() => handleActionClick(subscriptionAction.name, compactMode, true)}
+              isLoading={buttonIsLoading}
+            />
+          ))}
+        </>
+      )}
 
-            const handleLinkClick = async (e: React.MouseEvent) => {
-                e.preventDefault();
-                setPopover(false);
-                if (await isEngineRunningNow()) {
-                    router.push(url);
-                }
-            };
-
-            return (
-                <Link href={url} onClick={handleLinkClick}>
-                    <div css={linkMenuItemStyle}>{actionItem}</div>
-                </Link>
-            );
-        };
-
-        const tooltipIt = (actionItem: ReactJSXElement) => {
-            /**
-              Whether an action is disabled is indicated by it having a reason property.
-              The value of the reason property is as a translation key that should
-              be part of the local translations under subscription.details.workflow.disableReasons
-              Some of these reasons may contain dynamic values. The values are passed as extra keys next to
-              the reason key. The complete reason object is passed to the translate function to make this work.
-              An extra variable passed in might be of type array, before passing it in arrays are flattened to ,
-              concatenated strings.
-
-              Example action item response for an action that is disabled
-              const reason = {
-                name: "...",
-                description: "...",
-                reason: "random_reason_translation_key" =>
-                  this maps to a key in subscription.details.workflow.disableReasons containing
-                  ".... {randomVar1} .... {randomVar2}  "
-                randomVar: [
-                  "array value 1",
-                  "array value 2"
-                ],
-                randomVar2: "flat string"
-
+      {isAllowed(SUBSCRIPTION_RECONCILE + subscriptionId) && reconcileActionItems.length > 0 && (
+        <>
+          {!compactMode && <MenuBlock title={t('reconcile')} />}
+          {reconcileActionItems.map((subscriptionAction, index) => (
+            <WfoSubscriptionActionsMenuItem
+              key={`r_${index}`}
+              subscriptionAction={
+                buttonIsLoading && !subscriptionAction.reason ?
+                  { ...subscriptionAction, reason: 'subscription.running_process' }
+                : subscriptionAction
               }
+              target={WorkflowTarget.RECONCILE}
+              setPopover={setPopover}
+              subscriptionPath={subscriptionPath}
+              onClick={() => handleActionClick(subscriptionAction.name, compactMode, false)}
+              isLoading={buttonIsLoading}
+            />
+          ))}
+        </>
+      )}
 
-              // Translation function invocation
-              t('randonReason', reason)
-            */
-            if (!action.reason) return actionItem;
+      {isAllowed(SET_IN_SYNC) && compactMode && subscriptionDetail && (
+        <div>
+          <WfoInSyncField
+            compactMode={true}
+            subscriptionDetail={subscriptionDetail?.subscription}
+            setPopover={setPopover}
+          />
+        </div>
+      )}
+    </>
+  );
 
-            const tooltipContent = t(action.reason, flattenArrayProps(action));
+  const fullItems = (
+    <>
+      {isAllowed(SUBSCRIPTION_MODIFY + subscriptionId) && modifyActionItems.length > 0 && (
+        <>
+          <MenuBlock title={t('modify')} />
+          {modifyActionItems.map((subscriptionAction, index) => (
+            <WfoSubscriptionActionsMenuItem
+              key={`m_${index}`}
+              subscriptionAction={subscriptionAction}
+              target={WorkflowTarget.MODIFY}
+              setPopover={setPopover}
+              subscriptionPath={subscriptionPath}
+              onClick={() => {
+                redirectToUrl(subscriptionAction.name);
+              }}
+            />
+          ))}
+        </>
+      )}
+      {compactItems}
+      {isAllowed(SUBSCRIPTION_TERMINATE + subscriptionId) && terminateActionItems.length > 0 && (
+        <>
+          <MenuBlock title={t('terminate')} />
+          {terminateActionItems.map((subscriptionAction, index) => (
+            <WfoSubscriptionActionsMenuItem
+              key={`t_${index}`}
+              subscriptionAction={subscriptionAction}
+              target={WorkflowTarget.TERMINATE}
+              setPopover={setPopover}
+              subscriptionPath={subscriptionPath}
+              onClick={() => {
+                redirectToUrl(subscriptionAction.name);
+              }}
+            />
+          ))}
+        </>
+      )}
+    </>
+  );
 
-            return (
-                <div css={tooltipMenuItemStyle}>
-                    <EuiToolTip position="top" content={tooltipContent}>
-                        <WfoSubscriptionActionExpandableMenuItem
-                            subscriptionAction={action}
-                            onClickLockedRelation={() => setPopover(false)}
-                        >
-                            {actionItem}
-                        </WfoSubscriptionActionExpandableMenuItem>
-                    </EuiToolTip>
-                </div>
-            );
-        };
+  const MenuItemsList = () => (compactMode ? compactItems : fullItems);
 
-        const getIcon = () => {
-            return action.reason ? (
-                <div css={disabledIconStyle}>
-                    <WfoTargetTypeIcon target={target} disabled={true} />
-                    <div css={secondaryIconStyle}>
-                        <WfoXCircleFill
-                            width={20}
-                            height={20}
-                            color={theme.colors.danger}
-                        />
-                    </div>
-                </div>
-            ) : (
-                <div css={iconStyle}>
-                    <WfoTargetTypeIcon target={target} />
-                </div>
-            );
-        };
-
-        const ActionItem = () => (
-            <EuiContextMenuItem icon={getIcon()} disabled={!!action.reason}>
-                {action.description}
-            </EuiContextMenuItem>
-        );
-
-        return action?.reason
-            ? tooltipIt(<ActionItem />)
-            : linkIt(<ActionItem />);
-    };
-
-    const button = (
-        <EuiButton
-            iconType="arrowDown"
-            iconSide="right"
-            onClick={onButtonClick}
-            isLoading={isLoading}
-        >
-            {t('actions')}
-        </EuiButton>
-    );
-
-    return (
-        <EuiPopover
-            id="subscriptionActionPopover"
-            button={button}
-            isOpen={isPopoverOpen}
-            closePopover={closePopover}
-            panelPaddingSize="none"
-            anchorPosition="downLeft"
-        >
-            <EuiContextMenuPanel>
-                <EuiPanel color="transparent" paddingSize="s">
-                    {subscriptionActions &&
-                        isAllowed(
-                            PolicyResource.SUBSCRIPTION_MODIFY + subscriptionId,
-                        ) &&
-                        subscriptionActions.modify && (
-                            <>
-                                <MenuBlock title={t('modify')}></MenuBlock>
-                                {subscriptionActions.modify.map(
-                                    (action, index) => (
-                                        <MenuItem
-                                            key={`m_${index}`}
-                                            action={action}
-                                            index={index}
-                                            target={WorkflowTarget.MODIFY}
-                                        />
-                                    ),
-                                )}
-                            </>
-                        )}
-
-                    {subscriptionActions &&
-                        isAllowed(
-                            PolicyResource.SUBSCRIPTION_VALIDATE +
-                                subscriptionId,
-                        ) &&
-                        subscriptionActions.system && (
-                            <>
-                                <MenuBlock title={t('tasks')}></MenuBlock>
-                                {subscriptionActions.system.map(
-                                    (action, index) => (
-                                        <MenuItem
-                                            key={`s_${index}`}
-                                            action={action}
-                                            index={index}
-                                            target={WorkflowTarget.SYSTEM}
-                                            isTask={true}
-                                        />
-                                    ),
-                                )}
-                            </>
-                        )}
-
-                    {subscriptionActions &&
-                        isAllowed(
-                            PolicyResource.SUBSCRIPTION_TERMINATE +
-                                subscriptionId,
-                        ) &&
-                        subscriptionActions.terminate && (
-                            <>
-                                <MenuBlock title={t('terminate')}></MenuBlock>
-                                {subscriptionActions.terminate.map(
-                                    (action, index) => (
-                                        <MenuItem
-                                            key={`t_${index}`}
-                                            action={action}
-                                            index={index}
-                                            target={WorkflowTarget.TERMINATE}
-                                        />
-                                    ),
-                                )}
-                            </>
-                        )}
-                </EuiPanel>
-            </EuiContextMenuPanel>
-        </EuiPopover>
-    );
+  return (
+    <WfoPopover
+      id={'subscriptionActionPopover'}
+      isLoading={subscriptionActionsIsLoading || (compactMode && subscriptionDetailIsLoading) || isLoading || false}
+      button={button}
+      PopoverContent={MenuItemsList}
+      isPopoverOpen={isPopoverOpen}
+      closePopover={() => setPopover(false)}
+    />
+  );
 };

@@ -1,70 +1,76 @@
 import { css } from '@emotion/react';
 
-import { WfoTheme } from '@/hooks';
+import { WfoThemeHelpers } from '@/hooks';
 
-export const getSubscriptionDetailStyles = ({ theme }: WfoTheme) => {
-    const productBlockTreeWidth = theme.base * 28;
+export const getSubscriptionDetailStyles = ({ theme, isDarkModeActive }: WfoThemeHelpers) => {
+  const productBlockTreeWidth = theme.base * 28;
 
-    const contentCellStyle = css({
-        padding: (theme.base / 4) * 3,
-        borderBottom: theme.border.thin,
-        borderBottomColor: theme.colors.lightShade,
-    });
+  const labelCellStyle = css({
+    marginLeft: theme.size.m,
+  });
 
-    const headerCellStyle = css({
-        ...contentCellStyle,
-        paddingLeft: 0,
-        width: theme.base * 16,
-        fontWeight: theme.font.weight.medium,
-    });
+  const cellGroupStyle = css({
+    paddingBlock: theme.size.m,
+  });
 
-    const emptyCellStyle = css({
-        width: theme.base,
-    });
+  const borderStyle = css({
+    borderBottom: theme.border.thin,
+  });
 
-    const tableStyle = css({
-        backgroundColor: theme.colors.lightestShade,
-        width: '100%',
-        borderRadius: theme.border.radius.medium,
-        marginTop: theme.base / 2,
-    });
+  const rowStyle = css({
+    paddingInline: theme.size.m,
+    '&:last-of-type .border': {
+      borderBottom: 'none',
+    },
+  });
 
-    const timeLineStyle = css({
-        paddingLeft: theme.base / 2,
-    });
-    const workflowTargetStyle = css({ fontWeight: theme.font.weight.bold });
+  const tableStyle = css({
+    backgroundColor: isDarkModeActive ? theme.colors.backgroundBasePlain : theme.colors.backgroundBaseSubdued,
+    width: '100%',
+    borderRadius: theme.border.radius.medium,
+    marginTop: theme.base / 2,
+  });
 
-    const lastContentCellStyle = css({
-        ...contentCellStyle,
-        border: 0,
-    });
+  const timeLineStyle = css({
+    paddingLeft: theme.base / 2,
+  });
+  const workflowTargetStyle = css({ fontWeight: theme.font.weight.bold });
 
-    const lastHeaderCellStyle = css({
-        padding: theme.base,
-        paddingLeft: 0,
-        width: 250,
-        fontWeight: theme.font.weight.medium,
-        border: 0,
-    });
+  const inUseByRelationDetailsStyle = css({
+    borderColor: theme.colors.borderBaseSubdued,
+    borderStyle: 'solid',
+    borderWidth: 'thin',
+    marginBottom: theme.base / 4,
+    borderRadius: theme.border.radius.medium,
+  });
 
-    const inUseByRelationDetailsStyle = css({
-        borderColor: theme.colors.lightShade,
-        borderStyle: 'solid',
-        borderWidth: 'thin',
-        marginBottom: theme.base / 4,
-        borderRadius: theme.border.radius.medium,
-    });
+  const customerDescriptionsCustomerNameStyle = css({
+    whiteSpace: 'nowrap',
+    alignSelf: 'center',
+    marginRight: theme.base / 2,
+  });
+  const customerDescriptionsFormStyle = css({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  });
 
-    return {
-        contentCellStyle,
-        headerCellStyle,
-        tableStyle,
-        timeLineStyle,
-        workflowTargetStyle,
-        emptyCellStyle,
-        lastContentCellStyle,
-        lastHeaderCellStyle,
-        inUseByRelationDetailsStyle,
-        productBlockTreeWidth,
-    };
+  const processToggleStyles = css({
+    justifySelf: 'flex-end',
+  });
+
+  return {
+    rowStyle,
+    labelCellStyle,
+    cellGroupStyle,
+    borderStyle,
+    tableStyle,
+    timeLineStyle,
+    workflowTargetStyle,
+    inUseByRelationDetailsStyle,
+    productBlockTreeWidth,
+    customerDescriptionsCustomerNameStyle,
+    customerDescriptionsFormStyle,
+    processToggleStyles,
+  };
 };

@@ -2,133 +2,191 @@ import { CSSProperties } from 'react';
 
 import { css, keyframes } from '@emotion/react';
 
-import { WfoTheme } from '@/hooks';
+import { WfoThemeHelpers } from '@/hooks';
 
-import {
-    HEADER_CELL_TITLE_BUTTON_CLASS,
-    SORTABLE_ICON_CLASS,
-} from './WfoTableHeaderCell/styles';
+import { HEADER_CELL_TITLE_BUTTON_CLASS, SORTABLE_ICON_CLASS } from './WfoTableHeaderCell/styles';
 import { TABLE_ROW_HEIGHT } from './constants';
 
-export const getWfoTableStyles = ({ theme }: WfoTheme) => {
-    const radius = theme.border.radius.medium;
+export const getWfoTableStyles = ({ theme, isDarkModeActive }: WfoThemeHelpers) => {
+  const radius = theme.border.radius.medium;
 
-    const tableLoadingLineKeyframes = keyframes({
-        from: {
-            left: 0,
-            width: 0,
-        },
-        '20%': {
-            left: 0,
-            width: '40%',
-        },
-        '80%': {
-            left: '60%',
-            width: '40%',
-        },
-        '100%': {
-            left: '100%',
-            width: 0,
-        },
-    });
+  const tableLoadingLineKeyframes = keyframes({
+    from: {
+      left: 0,
+      width: 0,
+    },
+    '20%': {
+      left: 0,
+      width: '40%',
+    },
+    '80%': {
+      left: '60%',
+      width: '40%',
+    },
+    '100%': {
+      left: '100%',
+      width: 0,
+    },
+  });
 
-    const tableContainerStyle = css({
-        overflowX: 'auto',
-    });
+  const tableContainerStyle = css({
+    overflowX: 'auto',
+    // Query container so descendants (e.g. expanded rows) can size to the
+    // visible table width with cqw units instead of the full table width
+    containerType: 'inline-size',
+  });
 
-    const tableStyle = css({
-        width: '100%',
-    });
+  const tableStyle = css({
+    width: '100%',
+  });
 
-    const headerStyle = css({
-        backgroundColor: theme.colors.lightShade,
-        fontSize: theme.size.m,
-        textAlign: 'left',
-        'tr>:first-child': {
-            borderTopLeftRadius: radius,
-        },
-        'tr>:last-child': {
-            borderTopRightRadius: radius,
-        },
-    });
+  const headerStyle = css({
+    backgroundColor: theme.colors.borderBaseSubdued,
+    fontSize: theme.size.m,
+    textAlign: 'left',
+    'tr>:first-child': {
+      borderTopLeftRadius: radius,
+    },
+    'tr>:last-child': {
+      borderTopRightRadius: radius,
+    },
+  });
 
-    const bodyLoadingStyle = css({
-        position: 'relative',
+  const bodyLoadingStyle = css({
+    position: 'relative',
+    overflow: 'hidden',
+
+    '&::before': {
+      position: 'absolute',
+      content: '""',
+      height: theme.border.width.thick,
+      backgroundColor: theme.colors.primary,
+      animation: `${tableLoadingLineKeyframes} 1s linear infinite`,
+    },
+  });
+
+  const rowStyle = css({
+    height: TABLE_ROW_HEIGHT,
+    borderStyle: 'solid',
+    borderWidth: '0 0 1px 0',
+    borderColor: theme.colors.borderBaseSubdued,
+    position: 'relative',
+  });
+
+  const dataRowStyle = css({
+    '&:hover': {
+      backgroundColor: theme.colors.backgroundBasePlain,
+    },
+  });
+
+  const expandedRowStyle = css({
+    backgroundColor: theme.colors.backgroundBaseSubdued,
+  });
+
+  const sortableHeaderCellStyle = css({
+    paddingRight: 0,
+    [`&:hover`]: {
+      [`.${SORTABLE_ICON_CLASS}`]: {
+        visibility: 'visible',
+      },
+      [`.${HEADER_CELL_TITLE_BUTTON_CLASS}`]: {
         overflow: 'hidden',
+      },
+    },
+  });
 
-        '&::before': {
-            position: 'absolute',
-            content: '""',
-            height: theme.border.width.thick,
-            backgroundColor: theme.colors.primary,
-            animation: `${tableLoadingLineKeyframes} 1s linear infinite`,
-        },
+  const cellStyle = css({
+    paddingLeft: theme.size.m,
+    whiteSpace: 'nowrap',
+    verticalAlign: 'middle',
+  });
+
+  const cellContentStyle = css({
+    display: 'inline-block',
+    width: '100%',
+  });
+
+  const emptyTableMessageStyle = css({
+    textAlign: 'center',
+  });
+
+  const clickableStyle = css({
+    cursor: 'pointer',
+  });
+
+  const setWidth = (width?: CSSProperties['width']) =>
+    width !== undefined
+    && css({
+      width: width,
+      minWidth: width,
+      maxWidth: width,
+      overflow: 'hidden',
     });
 
-    const rowStyle = css({
-        height: TABLE_ROW_HEIGHT,
-        borderStyle: 'solid',
-        borderWidth: '0 0 1px 0',
-        borderColor: theme.colors.lightShade,
-    });
+  const headerCellContainer = css({
+    display: 'flex',
+    justifyContent: 'space-between',
+    height: TABLE_ROW_HEIGHT,
+  });
 
-    const dataRowStyle = css({
-        '&:hover': {
-            backgroundColor: theme.colors.lightestShade,
-        },
-    });
+  const dragAndDropStyle = css({
+    width: theme.size.xs,
+    cursor: 'col-resize',
+    borderRadius: theme.border.radius.small,
+    position: 'absolute',
+    height: '100%',
+    zIndex: theme.levels.menu,
+    '&:active, &:focus': {
+      transition: 'background-color 0.15s',
+      backgroundColor: isDarkModeActive ? theme.colors.textHeading : theme.colors.header,
+    },
+    '&::after': {
+      display: 'flex',
+      paddingTop: theme.base - (theme.base / 16) * 2,
+      content: `"|"`, // Inserts a vertical line
+      fontSize: theme.size.m,
+      color: theme.colors.backgroundBaseAccent,
+      cursor: 'col-resize',
+      opacity: 0.6,
+      zIndex: theme.levels.navigation,
+    },
+    '&:active::after': {
+      transition: 'opacity 0.15s',
+      opacity: 0,
+    },
+  });
 
-    const expandedRowStyle = css({
-        backgroundColor: theme.colors.lightestShade,
-    });
+  const paginationStyle = css({
+    '.eui-xScroll': { display: 'flex', justifyContent: 'flex-start' },
+  });
 
-    const headerCellStyle = css({
-        [`&:hover`]: {
-            [`.${SORTABLE_ICON_CLASS}`]: {
-                visibility: 'visible',
-            },
-            [`.${HEADER_CELL_TITLE_BUTTON_CLASS}`]: {
-                overflow: 'hidden',
-            },
-        },
-    });
+  const showExpandedRowStyle = css({
+    '& + tr': { display: 'table-row' },
+  });
 
-    const cellStyle = css({
-        paddingLeft: theme.size.m,
-        paddingRight: theme.size.m,
-        whiteSpace: 'nowrap',
-        verticalAlign: 'middle',
-    });
+  const toggleExpandedRowOnHoverStyle = css({
+    '&:hover + tr, &:focus-within + tr': { display: 'table-row' },
+    '& + tr:hover, & + tr:focus-within': { display: 'table-row' },
+  });
 
-    const emptyTableMessageStyle = css({
-        textAlign: 'center',
-    });
-
-    const clickableStyle = css({
-        cursor: 'pointer',
-    });
-
-    const setWidth = (width?: CSSProperties['width']) =>
-        width !== undefined &&
-        css({
-            width: width,
-            minWidth: width,
-            maxWidth: width,
-            overflow: 'hidden',
-        });
-
-    return {
-        tableContainerStyle,
-        tableStyle,
-        headerStyle,
-        bodyLoadingStyle,
-        rowStyle,
-        dataRowStyle,
-        expandedRowStyle,
-        headerCellStyle,
-        cellStyle,
-        emptyTableMessageStyle,
-        clickableStyle,
-        setWidth,
-    };
+  return {
+    tableContainerStyle,
+    tableStyle,
+    headerStyle,
+    headerCellContainer,
+    bodyLoadingStyle,
+    rowStyle,
+    dataRowStyle,
+    expandedRowStyle,
+    sortableHeaderCellStyle,
+    cellStyle,
+    cellContentStyle,
+    emptyTableMessageStyle,
+    clickableStyle,
+    dragAndDropStyle,
+    paginationStyle,
+    setWidth,
+    showExpandedRowStyle,
+    toggleExpandedRowOnHoverStyle,
+  };
 };
